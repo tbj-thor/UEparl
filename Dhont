@@ -18,7 +18,7 @@ sum(all)
 names(all) = c('A','B','C','F','I','N','O','V','Ø','Å')
 
 groups = list('AF'=c('A','F'),'VIF'=c('V','I','C'),'BÅ'=c('B','Å'),'ØN'=c('Ø','N'),'O'=c('O'))
-total_mandates = 1
+total_mandates = 14
 
 
 distribute_mandates = function(votes_vec,mandate_count) {
