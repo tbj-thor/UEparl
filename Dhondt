@@ -1,0 +1,69 @@
+
+
+
+A = 23.6
+B = 9.7
+C = 5.6
+F = 13.0
+I = 2.3
+N = 3.1
+O = 11.8
+V = 20.6
+Ø = 6.7
+Å = 3.7
+
+all = c(A,B,C,F,I,N,O,V,Ø,Å)
+sum(all)
+
+names(all) = c('A','B','C','F','I','N','O','V','Ø','Å')
+
+groups = list('AF'=c('A','F'),'VIF'=c('V','I','C'),'BÅ'=c('B','Å'),'ØN'=c('Ø','N'),'O'=c('O'))
+total_mandates = 14
+
+apply_dhondt = function(votes,i) {
+  return(votes/(i*2-1))
+}
+
+
+distribute_mandates = function(votes_vec,mandate_count) {
+  names = names(votes_vec)
+  mandate_vec = rep(0,length(names))
+  names(mandate_vec) = names
+  new_votes_vec = votes_vec
+  for (i in 1:mandate_count) {
+    ind = which.max(new_votes_vec)
+    mandate_vec[ind] = mandate_vec[ind]+1
+    new_votes_vec[ind] = votes_vec[ind]/(mandate_vec[ind]+1)
+    #new_votes_vec[ind] = apply_dhondt(votes_vec[ind],(i+1))
+  }
+  return(mandate_vec)
+}
+
+
+test = distribute_mandates(all,14) ########### Mandatfordeling uden valgforbund
+
+
+distribute_mandates_with_groups = function(votes_vec,mandate_count,groups) {
+  grouped_vec = c()
+  for (i in 1:length(groups)) {
+    group_name = groups[[i]]
+    grouped_vec = c(grouped_vec,sum(votes_vec[which(names(votes_vec) %in% group_name)]))
+  }
+  names(grouped_vec) = names(groups)
+  grouped_mandates = distribute_mandates(grouped_vec,mandate_count)
+  party_mandate_vec = rep(0,length(votes_vec))
+  names(party_mandate_vec) = names(votes_vec)
+  for (i in 1:length(groups)) {
+    parties = as.vector(groups[[i]])
+    party_votes = votes_vec[which(names(votes_vec) %in% parties)]
+    group_mandate_count = grouped_mandates[i]
+    party_mandates = distribute_mandates(party_votes,group_mandate_count)
+    for (i in 1:length(party_mandates)) {
+      party_mandate_vec[which(names(party_mandate_vec)==names(party_mandates)[i])] = party_mandates[i]
+    }
+  }
+  return(list('Party_mandates'=party_mandate_vec,'Group_mandates'=grouped_mandates))
+}
+
+distribute_mandates_with_groups(all,14,groups) ########### Mandatfordeling uden valgforbund per parti og per valgforbund
+
