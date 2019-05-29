@@ -27,6 +27,18 @@ V = 23.5
 Å = 3.1
 
 
+
+A = 21.5
+B = 10.1
+C = 6.2
+F = 13.2
+I = 2.2
+N = 3.7
+O = 10.7
+V = 23.5
+Ø = 5.5
+Å = 3.4
+
 all = c(A,B,C,F,I,N,O,V,Ø,Å)
 sum(all)
 
@@ -35,24 +47,25 @@ names(all) = c('A','B','C','F','I','N','O','V','Ø','Å')
 groups = list('AF'=c('A','F'),'VIF'=c('V','I','C'),'BÅ'=c('B','Å'),'ØN'=c('Ø','N'),'O'=c('O'))
 total_mandates = 14
 
-apply_dhondt = function(votes,i) {
-  return(votes/(i*2-1))
-}
+
 
 
 distribute_mandates = function(votes_vec,mandate_count) {
   names = names(votes_vec)
   mandate_vec = rep(0,length(names))
   names(mandate_vec) = names
-  new_votes_vec = votes_vec
-  for (i in 1:mandate_count) {
-    ind = which.max(new_votes_vec)
-    mandate_vec[ind] = mandate_vec[ind]+1
-    new_votes_vec[ind] = votes_vec[ind]/(mandate_vec[ind]+1)
-    #new_votes_vec[ind] = apply_dhondt(votes_vec[ind],(i+1))
+  if (mandate_count == 0) {
+    return(mandate_vec)
+  } else {
+    new_votes_vec = votes_vec
+    for (i in 1:mandate_count) {
+      ind = which.max(new_votes_vec)
+      mandate_vec[ind] = mandate_vec[ind]+1
+      new_votes_vec[ind] = votes_vec[ind]/(mandate_vec[ind]+1)
+    }
+    #print(new_votes_vec)
+    return(mandate_vec)
   }
-  print(new_votes_vec)
-  return(mandate_vec)
 }
 
 
@@ -91,3 +104,78 @@ groups2 =list('AF'=c('A','F'),'VIF'=c('V','I','C'),'B'=c('B'),'ØN'=c('Ø','N'),
 
 
 distribute_mandates_with_groups(all,14,groups2) ########### Mandatfordeling uden valgforbund per parti og per valgforbund
+test
+
+
+groups3 =list('AFÅ'=c('A','F','Å'),'VIF'=c('V','I','C'),'B'=c('B'),'ØN'=c('Ø','N'),'O'=c('O'))
+
+distribute_mandates_with_groups(all,14,groups3) ########### Mandatfordeling uden valgforbund per parti og per valgforbund
+
+
+
+
+percent_mat = matrix(ncol=10,nrow=0)
+mandate_mat = matrix(ncol=10,nrow=0)
+
+percent_vec = c()
+mandate_vec = c()
+
+for (i in 1:1000) {
+  random_votes_vec = runif(10,1,100)
+  names(random_votes_vec) = names(all)
+  mandate_dist = distribute_mandates_with_groups(random_votes_vec,14,groups)
+  mandate_percent = mandate_dist$Party_mandates/14
+  votes_percent = random_votes_vec/sum(random_votes_vec)
+  percent_vec = c(percent_vec,votes_percent)
+  mandate_vec = c(mandate_vec,mandate_percent)
+}
+
+
+diff_vec = mandate_vec-percent_vec
+
+plot(percent_vec,diff_vec)
+plot(mandate_vec,diff_vec)
+
+cor.test(percent_vec,diff_vec)
+
+
+
+
+vote_mat = matrix(nrow=1000,ncol=0)
+mandate_mat = matrix(nrow=1000,ncol=0)
+diff_mat = matrix(nrow=1000,ncol=0)
+
+
+for (i in 1:length(all)) {
+  party = names(all)[i]
+  sub_mandates = mandate_vec[which(names(mandate_vec)==party)]
+  sub_votes = percent_vec[which(names(percent_vec)==party)]
+  sub_diff = diff_vec[which(names(diff_vec)==party)]
+  vote_mat = cbind(vote_mat,sub_votes)
+  mandate_mat = cbind(mandate_mat,sub_mandates)
+  diff_mat = cbind(diff_mat,sub_diff)
+}
+
+colnames(vote_mat) = names(all)
+colnames(mandate_mat) = names(all)
+colnames(diff_mat) = names(all)
+
+diff_df = as.data.frame(diff_mat)
+diff_melt = melt(diff_df)
+
+
+
+
+plot(diff_melt)
+p <- plot_ly(diff_melt,x=~variable,y=~value,type='box',boxpoints='all',pointpos=-1.5, color=~variable, colors = c("#c60101","#a509c4","#6fbc0b","#e88888","#75c4d6","#c60153","#e8d402","#353fcc","#ffa100","#1f6b21")) %>%
+  layout(xaxis=list(title='Party'),yaxis=list(title='Mandate% minus vote%'),title='Discrepancy between % of mandates and % of votes when distributing 14 seats based on 1000 random distributions of party votes')
+p
+
+t.test(diff_melt$value[which(diff_melt$variable=="O")],diff_melt$value[which(diff_melt$variable=="A")])
+
+t.test(diff_melt$value[which(diff_melt$variable=="A")],diff_melt$value[which(diff_melt$variable=="B")])
+t.test(diff_melt$value[which(diff_melt$variable=="A")],diff_melt$value[which(diff_melt$variable=="F")])
+t.test(diff_melt$value[which(diff_melt$variable=="A")],diff_melt$value[which(diff_melt$variable=="N")])
+
+
+t.test(diff_melt$value[which(diff_melt$variable=="A")],diff_melt$value[which(diff_melt$variable=="V")])
